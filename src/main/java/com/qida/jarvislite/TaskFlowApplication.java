@@ -4,8 +4,8 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class JarvisLiteApplication {
+public class TaskFlowApplication {
     public static void main(String[] args) {
-        SpringApplication.run(JarvisLiteApplication.class, args);
+        SpringApplication.run(TaskFlowApplication.class, args);
     }
 }
