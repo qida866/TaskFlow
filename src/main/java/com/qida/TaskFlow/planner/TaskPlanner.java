@@ -1,6 +1,6 @@
-package com.qida.jarvislite.planner;
+package com.qida.TaskFlow.planner;
 
-import com.qida.jarvislite.model.Step;
+import com.qida.TaskFlow.model.Step;
 
 import java.util.ArrayList;
 import java.util.List;

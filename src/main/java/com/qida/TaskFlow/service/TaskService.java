@@ -1,7 +1,7 @@
-package com.qida.jarvislite.service;
+package com.qida.TaskFlow.service;
 
-import com.qida.jarvislite.model.Step;
-import com.qida.jarvislite.model.Task;
+import com.qida.TaskFlow.model.Step;
+import com.qida.TaskFlow.model.Task;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;

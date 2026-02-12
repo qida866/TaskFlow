@@ -1,4 +1,4 @@
-package com.qida.jarvislite.model;
+package com.qida.TaskFlow.model;
 
 public class Step {
     private String text;

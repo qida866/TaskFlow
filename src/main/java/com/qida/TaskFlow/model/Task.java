@@ -1,4 +1,4 @@
-package com.qida.jarvislite.model;
+package com.qida.TaskFlow.model;
 
 import java.util.ArrayList;
 import java.util.List;

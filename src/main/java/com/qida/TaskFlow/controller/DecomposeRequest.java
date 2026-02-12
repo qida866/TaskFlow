@@ -1,4 +1,4 @@
-package com.qida.jarvislite.controller;
+package com.qida.TaskFlow.controller;
 
 public class DecomposeRequest {
     private String title;

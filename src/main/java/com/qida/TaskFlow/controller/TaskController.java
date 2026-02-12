@@ -1,9 +1,9 @@
-package com.qida.jarvislite.controller;
+package com.qida.TaskFlow.controller;
 
-import com.qida.jarvislite.model.Step;
-import com.qida.jarvislite.model.Task;
-import com.qida.jarvislite.planner.TaskPlanner;
-import com.qida.jarvislite.service.TaskService;
+import com.qida.TaskFlow.model.Step;
+import com.qida.TaskFlow.model.Task;
+import com.qida.TaskFlow.planner.TaskPlanner;
+import com.qida.TaskFlow.service.TaskService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
