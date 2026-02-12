@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>JarvisLite</title>
+    <style>
+        body { font-family: system-ui, -apple-system, Segoe UI, Arial; max-width: 900px; margin: 24px auto; padding: 0 12px; }
+        h1 { margin: 0 0 12px; }
+        .row { display: flex; gap: 8px; flex-wrap: wrap; }
+        input { flex: 1; min-width: 260px; padding: 10px; }
+        button { padding: 10px 12px; cursor: pointer; }
+        .card { border: 1px solid #3333; border-radius: 10px; padding: 12px; margin-top: 12px; }
+        .muted { color: #666; font-size: 13px; }
+        .steps { margin-top: 8px; display: grid; gap: 6px; }
+        .step { display: flex; align-items: center; gap: 8px; }
+        .step.done span { text-decoration: line-through; color: #777; }
+        .pill { display:inline-block; padding:2px 8px; border-radius:999px; border:1px solid #3333; font-size:12px; margin-left:6px;}
+        .actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+        .danger { border-color: #e11d48; color:#e11d48; }
+        code { background:#00000010; padding:2px 6px; border-radius:6px; }
+    </style>
+</head>
+
+<body>
+<h1>JarvisLite</h1>
+<div class="muted">Backend: <code>http://localhost:8080</code></div>
+
+<div class="row" style="margin-top:12px;">
+    <input id="title" placeholder="Enter a task title, e.g. Build a Java backend API project" />
+    <button id="create">Create</button>
+    <button id="createAuto">Create + AutoPlan</button>
+    <button id="refresh">Refresh</button>
+    <button id="clearAll" class="danger">Delete All</button>
+</div>
+
+<div id="out"></div>
+
+<script>
+    const API = "http://localhost:8080";
+
+    async function req(method, path, body) {
+      const opt = { method, headers: {} };
+      if (body !== undefined) {
+        opt.headers["Content-Type"] = "application/json";
+        opt.body = JSON.stringify(body);
+      }
+      const r = await fetch(API + path, opt);
+      if (r.status === 204) return null;
+      if (!r.ok) {
+        const text = await r.text().catch(() => "");
+        throw new Error(`${method} ${path} -> ${r.status} ${text}`);
+      }
+      return r.json();
+    }
+
+    function esc(s) {
+      return (s ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;");
+    }
+
+    function renderTasks(tasks) {
+      const out = document.getElementById("out");
+      if (!tasks || tasks.length === 0) {
+        out.innerHTML = `<p class="muted">No tasks yet.</p>`;
+        return;
+      }
+
+      out.innerHTML = tasks.map(t => {
+        const steps = t.steps || [];
+        const done = (t.doneCount ?? 0);
+        const total = (t.totalCount ?? steps.length ?? 0);
+        const percent = total === 0 ? 0 : Math.floor(done * 100 / total);
+
+        return `
+          <div class="card" data-id="${t.id}">
+            <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+              <div>
+                <b>#${t.id}</b> ${esc(t.title)}
+                <span class="pill">${esc(t.status)}</span>
+                <span class="pill">${percent}%</span>
+                <div class="muted">done: ${done} / total: ${total}</div>
+              </div>
+
+              <div class="actions">
+                <button onclick="completeAll(${t.id})">Complete All</button>
+                <button onclick="uncompleteAll(${t.id})">Uncomplete All</button>
+                <button onclick="resetTask(${t.id})">Reset</button>
+                <button class="danger" onclick="deleteOne(${t.id})">Delete</button>
+              </div>
+            </div>
+
+            <div class="steps">
+              ${steps.map((s, idx) => `
+                <div class="step ${s.done ? "done":""}">
+                  <input type="checkbox" ${s.done ? "checked":""} onchange="toggle(${t.id}, ${idx})"/>
+                  <span>${esc(s.text)}</span>
+                  <span class="muted">(#${idx})</span>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    async function refresh() {
+      const tasks = await req("GET", "/tasks");
+      renderTasks(tasks);
+    }
+
+    async function createTask(auto = false) {
+      const titleEl = document.getElementById("title");
+      const title = titleEl.value.trim();
+      if (!title) return;
+
+      const path = auto ? "/tasks?autoPlan=true" : "/tasks";
+      await req("POST", path, { title });
+
+      titleEl.value = "";
+      await refresh();
+    }
+
+    async function toggle(id, index) {
+      await req("PATCH", `/tasks/${id}/steps/${index}/toggle`);
+      await refresh();
+    }
+
+    async function resetTask(id) {
+      await req("POST", `/tasks/${id}/reset`);
+      await refresh();
+    }
+
+    async function completeAll(id) {
+      await req("POST", `/tasks/${id}/completeAll`);
+      await refresh();
+    }
+
+    async function uncompleteAll(id) {
+      await req("POST", `/tasks/${id}/uncompleteAll`);
+      await refresh();
+    }
+
+    async function deleteOne(id) {
+      await req("DELETE", `/tasks/${id}`);
+      await refresh();
+    }
+
+    async function deleteAll() {
+      await req("DELETE", `/tasks`);
+      await refresh();
+    }
+
+    // Bind top buttons
+    document.getElementById("create").onclick = () =>
+      createTask(false).catch(e => alert(e.message));
+
+    document.getElementById("createAuto").onclick = () =>
+      createTask(true).catch(e => alert(e.message));
+
+    document.getElementById("refresh").onclick = () =>
+      refresh().catch(e => alert(e.message));
+
+    document.getElementById("clearAll").onclick = () =>
+      deleteAll().catch(e => alert(e.message));
+
+    // Enter => Create + AutoPlan
+    document.getElementById("title").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        createTask(true).catch(err => alert(err.message));
+      }
+    });
+
+    // first load
+    refresh().catch(console.error);
+</script>
+</body>
+</html>
